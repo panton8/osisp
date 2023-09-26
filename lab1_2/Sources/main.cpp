@@ -13,6 +13,20 @@ bool animation_running = false;
 int animation_speed = 80;
 DWORD last_update = 0;
 
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode >= 0 && wParam == WM_KEYDOWN)
+    {
+        KBDLLHOOKSTRUCT* hookStruct = (KBDLLHOOKSTRUCT*)lParam;
+        if (hookStruct->vkCode == VK_F2)
+        {
+            MessageBox(NULL, "F2 key pressed.", "Info", MB_OK | MB_ICONINFORMATION);
+        }
+    }
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     WNDCLASS wc = {0};
@@ -46,11 +60,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hMenu, MF_STRING, 8, "Toggle Animation");
     AppendMenu(hMenu, MF_STRING, 9, "Reset Trajectory");
     SetMenu(hwnd, hMenu);
+    
+    HHOOK keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hInstance, 0);
+    if (keyboardHook == NULL)
+    {
+        MessageBox(NULL, "Failed to install keyboard hook.", "Error", MB_OK | MB_ICONERROR);
+        return 1;
+    }
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
-
-
+    
     MSG msg = {0};
     while (1)
     {
@@ -78,6 +98,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             Sleep(1); // Sleep for a short duration to reduce CPU load
         }
     }
+
+    UnhookWindowsHookEx(keyboardHook);
 
     return msg.wParam;
 }
